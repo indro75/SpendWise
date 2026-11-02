@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from decimal import Decimal
-
+from app.services.alert_service import check_budget_alerts
 from app.database.connection import get_db
 from app.models.budget import Budget
 from app.models.category import Category
@@ -148,6 +148,9 @@ def update_budget(
 
     db.commit()
     db.refresh(budget)
+
+    # Check for budget alerts after updating a budget
+    check_budget_alerts(db, current_user.id)
 
     return budget
 

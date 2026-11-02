@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date
-
+from app.services.alert_service import check_budget_alerts
 from app.database.connection import get_db
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -38,6 +38,9 @@ def create_transaction(
     db.add(new_transaction)
     db.commit()
     db.refresh(new_transaction)
+
+    # Check for budget alerts after creating a new transaction
+    check_budget_alerts(db, current_user.id)
 
     return new_transaction
 
@@ -94,6 +97,7 @@ def update_transaction(
 
     db.commit()
     db.refresh(transaction)
+    check_budget_alerts(db, current_user.id)
 
     return transaction
 
