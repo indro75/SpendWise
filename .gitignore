@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Machine Learning
+ml/datasets/raw/*
+ml/saved_models/*.pkl
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vscode/
+
+# System
+.DS_Store
