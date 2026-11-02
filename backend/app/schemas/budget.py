@@ -42,3 +42,14 @@ class BudgetResponse(BaseModel):
     category_id: int | None
 
     model_config = {"from_attributes": True}
+
+class BudgetProgressResponse(BaseModel):
+    id: int
+    amount: Decimal
+    spent_amount: Decimal
+    remaining_amount: Decimal
+    percentage_used: float
+    status: str
+    start_date: date
+    end_date: date
+    category_id: int | None
