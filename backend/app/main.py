@@ -6,6 +6,7 @@ from app.api.categories import router as category_router
 from app.api.budget import router as budget_router
 from app.api.savings_goals import router as savings_goals_router
 from app.api.analytics import router as analytics_router
+from app.api.spending_alerts import router as spending_alerts_router
 app = FastAPI(
     title="SpendWise API",
     description="Personal Finance and ML Analytics API",
@@ -26,7 +27,7 @@ app.include_router(category_router)
 app.include_router(budget_router)
 app.include_router(savings_goals_router)
 app.include_router(analytics_router)
-
+app.include_router(spending_alerts_router)
 @app.get("/")
 def home():
     return {
