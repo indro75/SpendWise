@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.transactions import router as transaction_router
 from app.api.auth import router as auth_router
 from app.api.categories import router as category_router
-
+from app.api.budget import router as budget_router
 app = FastAPI(
     title="SpendWise API",
     description="Personal Finance and ML Analytics API",
@@ -21,6 +21,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(transaction_router)
 app.include_router(category_router)
+app.include_router(budget_router)
+
 @app.get("/")
 def home():
     return {
