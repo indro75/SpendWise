@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useTheme } from '../context/ThemeContext';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
-import { Mail, Lock, User, Eye, EyeOff, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Logo } from '../components/common/Logo';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Sun, Moon } from 'lucide-react';
 
 export const Register = () => {
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const { showToast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
@@ -21,8 +24,8 @@ export const Register = () => {
 
   const validate = () => {
     const errs = {};
-    if (!fullName.trim() || fullName.trim().length < 2) {
-      errs.fullName = 'Full name must be at least 2 characters';
+    if (!fullName.trim()) {
+      errs.fullName = 'Full name is required';
     }
 
     if (!email.trim()) {
@@ -53,19 +56,16 @@ export const Register = () => {
     setErrors({});
 
     try {
-      await register(fullName.trim(), email.trim(), password);
-      showToast('Registration successful! Logging you in...', 'success');
-
-      // Automatically sign in the newly registered user
-      const loginRes = await login(email.trim(), password);
-      if (loginRes.success) {
-        navigate('/');
+      const res = await register(email.trim(), password, fullName.trim());
+      if (res.success) {
+        showToast('Account registered successfully! Welcome to SpendWise.', 'success');
+        navigate('/', { replace: true });
       } else {
-        navigate('/login');
+        showToast('Registration failed. Please verify your details.', 'error');
       }
     } catch (err) {
       const detail = err.response?.data?.detail;
-      const msg = typeof detail === 'string' ? detail : 'Registration failed. Please check your information.';
+      const msg = typeof detail === 'string' ? detail : 'Registration failed. Please check the inputs.';
       setErrors({ form: msg });
       showToast(msg, 'error');
     } finally {
@@ -74,26 +74,38 @@ export const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4">
-      {/* Background ambient lighting */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4 sm:p-6 transition-colors duration-200 relative">
+      {/* Theme Switcher in top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shadow-sm cursor-pointer"
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
+        </button>
       </div>
 
-      <div className="relative w-full max-w-md bg-[#151C2C] border border-[#1F293D] rounded-3xl p-8 shadow-2xl shadow-black/40">
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-xl shadow-indigo-500/25 mb-4">
-            <Sparkles className="w-7 h-7 text-white" />
+      {/* Background ambient lighting */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+          <div className="mb-4">
+            <Logo size="xl" showText={false} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-100 tracking-tight">Create your Account</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">Create your Account</h2>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1 max-w-xs">
             Start managing your personal finances with SpendWise
           </p>
         </div>
 
         {errors.form && (
-          <div className="mb-6 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium text-center">
+          <div className="mb-6 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold text-center">
             {errors.form}
           </div>
         )}
@@ -137,7 +149,7 @@ export const Register = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-gray-400 hover:text-gray-200 transition-colors p-1"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -165,18 +177,20 @@ export const Register = () => {
             isLoading={isLoading}
           >
             <span>Create Account</span>
-            <CheckCircle2 className="w-4 h-4 ml-1" />
+            <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-800 text-center text-xs text-gray-400">
+        <div className="mt-6 pt-5 border-t border-[var(--border-subtle)] text-center text-xs text-[var(--text-muted)]">
           Already have an account?{' '}
-          <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold ml-1">
-            Sign in
+          <Link
+            to="/login"
+            className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline ml-1"
+          >
+            Sign In here
           </Link>
         </div>
       </div>
     </div>
   );
 };
-

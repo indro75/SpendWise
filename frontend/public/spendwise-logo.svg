@@ -1,0 +1,58 @@
+<svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sw-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="55%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <linearGradient id="sw-arrow-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#A5F3FC" />
+    </linearGradient>
+    <linearGradient id="sw-star-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <filter id="sw-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <rect width="44" height="44" rx="12" fill="url(#sw-bg-grad)" />
+  <circle cx="36" cy="8" r="16" fill="white" fill-opacity="0.12" />
+
+  <path
+    d="M13 28.5C13.5 31.5 16.5 33.5 21.5 33.5C26.5 33.5 29.5 31 29.5 27.5C29.5 24.5 27 22.8 22 21.5"
+    stroke="white"
+    stroke-opacity="0.45"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M14 17C14.5 13.5 17.5 11.5 22 11.5C26.5 11.5 30.5 13.5 31 17.5V11M31 11H24.5"
+    stroke="url(#sw-arrow-grad)"
+    stroke-width="3.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#sw-glow)"
+  />
+
+  <path
+    d="M13 31L30.5 11.5"
+    stroke="white"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    filter="url(#sw-glow)"
+  />
+
+  <path
+    d="M28 20L29.2 22.3L31.5 23.5L29.2 24.7L28 27L26.8 24.7L24.5 23.5L26.8 22.3L28 20Z"
+    fill="url(#sw-star-grad)"
+    filter="url(#sw-glow)"
+  />
+
+  <circle cx="14" cy="23" r="1.5" fill="#A5F3FC" />
+</svg>
+

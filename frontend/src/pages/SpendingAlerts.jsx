@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { spendingAlertService } from '../services/spendingAlerts';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { formatDate } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -15,9 +15,6 @@ import {
   Info,
   Trash2,
   CheckCircle2,
-  ShieldAlert,
-  Clock,
-  Sparkles,
 } from 'lucide-react';
 
 export const SpendingAlerts = () => {
@@ -67,15 +64,15 @@ export const SpendingAlerts = () => {
   const infoCount = alerts.filter((a) => a.severity === 'info').length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-800/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[var(--border-subtle)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Bell className="w-6 h-6 text-indigo-400" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+            <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500" />
             Spending Alerts & Notifications
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-[var(--text-muted)] mt-1">
             Automated alerts triggered when category spending reaches 80% or exceeds 100% of defined budgets.
           </p>
         </div>
@@ -84,6 +81,7 @@ export const SpendingAlerts = () => {
           <Button
             variant="outline"
             size="sm"
+            className="w-full sm:w-auto"
             onClick={async () => {
               for (const a of alerts) {
                 await spendingAlertService.delete(a.id).catch(() => {});
@@ -98,36 +96,36 @@ export const SpendingAlerts = () => {
       </div>
 
       {/* Severity Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#151C2C] border border-rose-500/20 rounded-xl p-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-[var(--bg-card)] border border-rose-500/25 rounded-2xl p-4 flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-xs text-rose-400 uppercase tracking-wider font-semibold">Critical Danger (100%+)</span>
-            <p className="text-2xl font-extrabold text-white mt-1">{dangerCount} alerts</p>
-            <span className="text-[11px] text-gray-400">Budget limits fully exceeded</span>
+            <span className="text-[11px] text-rose-600 dark:text-rose-400 uppercase tracking-wider font-semibold">Critical Danger (100%+)</span>
+            <p className="text-2xl font-extrabold text-[var(--text-primary)] mt-1">{dangerCount} alerts</p>
+            <span className="text-[11px] text-[var(--text-muted)]">Budget limits fully exceeded</span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center">
             <AlertCircle className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-[#151C2C] border border-amber-500/20 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-[var(--bg-card)] border border-amber-500/25 rounded-2xl p-4 flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-xs text-amber-400 uppercase tracking-wider font-semibold">Warnings (80% - 99%)</span>
-            <p className="text-2xl font-extrabold text-white mt-1">{warningCount} alerts</p>
-            <span className="text-[11px] text-gray-400">Approaching threshold limit</span>
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 uppercase tracking-wider font-semibold">Warnings (80% - 99%)</span>
+            <p className="text-2xl font-extrabold text-[var(--text-primary)] mt-1">{warningCount} alerts</p>
+            <span className="text-[11px] text-[var(--text-muted)]">Approaching threshold limit</span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center">
             <AlertTriangle className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-[#151C2C] border border-indigo-500/20 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-[var(--bg-card)] border border-indigo-500/25 rounded-2xl p-4 flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-xs text-indigo-400 uppercase tracking-wider font-semibold">Informational Notices</span>
-            <p className="text-2xl font-extrabold text-white mt-1">{infoCount} alerts</p>
-            <span className="text-[11px] text-gray-400">System updates and guidance</span>
+            <span className="text-[11px] text-indigo-600 dark:text-indigo-400 uppercase tracking-wider font-semibold">Informational Notices</span>
+            <p className="text-2xl font-extrabold text-[var(--text-primary)] mt-1">{infoCount} alerts</p>
+            <span className="text-[11px] text-[var(--text-muted)]">System updates and guidance</span>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 flex items-center justify-center">
             <Info className="w-6 h-6" />
           </div>
         </div>
@@ -136,14 +134,14 @@ export const SpendingAlerts = () => {
       {/* Filter Tabs & Alert Stream */}
       <Card>
         {/* Severity Tabs */}
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-800">
+        <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--border-subtle)]">
           <button
             type="button"
             onClick={() => setSeverityFilter('all')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               severityFilter === 'all'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
             }`}
           >
             All Alerts ({alerts.length})
@@ -151,10 +149,10 @@ export const SpendingAlerts = () => {
           <button
             type="button"
             onClick={() => setSeverityFilter('danger')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               severityFilter === 'danger'
-                ? 'bg-rose-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
             }`}
           >
             Danger ({dangerCount})
@@ -162,10 +160,10 @@ export const SpendingAlerts = () => {
           <button
             type="button"
             onClick={() => setSeverityFilter('warning')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               severityFilter === 'warning'
-                ? 'bg-amber-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                ? 'bg-amber-600 text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
             }`}
           >
             Warning ({warningCount})
@@ -173,10 +171,10 @@ export const SpendingAlerts = () => {
           <button
             type="button"
             onClick={() => setSeverityFilter('info')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               severityFilter === 'info'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
             }`}
           >
             Info ({infoCount})
@@ -198,50 +196,61 @@ export const SpendingAlerts = () => {
               const isDanger = alert.severity === 'danger';
               const isWarning = alert.severity === 'warning';
 
-              let borderClass = 'border-indigo-500/30 bg-indigo-500/5';
-              let icon = <Info className="w-5 h-5 text-indigo-400 shrink-0" />;
-
-              if (isDanger) {
-                borderClass = 'border-rose-500/30 bg-rose-500/10';
-                icon = <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />;
-              } else if (isWarning) {
-                borderClass = 'border-amber-500/30 bg-amber-500/10';
-                icon = <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />;
-              }
-
               return (
                 <div
                   key={alert.id}
-                  className={`flex items-start justify-between gap-4 p-4 rounded-xl border ${borderClass} transition-all duration-200 hover:shadow-lg`}
+                  className={`p-3.5 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                    isDanger
+                      ? 'bg-rose-500/5 border-rose-500/25 hover:border-rose-500/40'
+                      : isWarning
+                      ? 'bg-amber-500/5 border-amber-500/25 hover:border-amber-500/40'
+                      : 'bg-indigo-500/5 border-indigo-500/25 hover:border-indigo-500/40'
+                  }`}
                 >
-                  <div className="flex items-start gap-3">
-                    {icon}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                        isDanger
+                          ? 'bg-rose-500/15 text-rose-500'
+                          : isWarning
+                          ? 'bg-amber-500/15 text-amber-500'
+                          : 'bg-indigo-500/15 text-indigo-500'
+                      }`}
+                    >
+                      {isDanger ? (
+                        <AlertCircle className="w-5 h-5" />
+                      ) : isWarning ? (
+                        <AlertTriangle className="w-5 h-5" />
+                      ) : (
+                        <Info className="w-5 h-5" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={alert.severity}>{alert.severity}</Badge>
-                        {alert.amount && (
-                          <span className="text-xs font-bold text-gray-200">
-                            Triggered Amount: {formatCurrency(alert.amount)}
-                          </span>
-                        )}
+                        <span className="text-[11px] text-[var(--text-muted)]">
+                          {formatDate(alert.created_at)}
+                        </span>
                       </div>
-                      <p className="text-sm font-semibold text-gray-100">{alert.message}</p>
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 pt-1">
-                        <Clock className="w-3.5 h-3.5 text-gray-500" />
-                        <span>{formatDate(alert.created_at, { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
+                      <p className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] mt-1.5 leading-snug">
+                        {alert.message}
+                      </p>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteAlert(alert.id)}
-                    disabled={deletingId === alert.id}
-                    className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors shrink-0"
-                    title="Dismiss alert"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border-subtle)]/50">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Trash2}
+                      isLoading={deletingId === alert.id}
+                      onClick={() => handleDeleteAlert(alert.id)}
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 text-xs"
+                    >
+                      Dismiss
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -251,4 +260,3 @@ export const SpendingAlerts = () => {
     </div>
   );
 };
-

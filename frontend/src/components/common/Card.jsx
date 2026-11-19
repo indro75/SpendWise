@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const Card = ({
   children,
   className = '',
@@ -11,27 +9,26 @@ export const Card = ({
 }) => {
   return (
     <div
-      className={`bg-[#151C2C] border border-[#1F293D] rounded-2xl p-5 shadow-lg shadow-black/20 transition-all duration-200 ${className}`}
+      className={`bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 sm:p-5 shadow-sm transition-all duration-200 ${className}`}
       {...props}
     >
       {(title || subtitle || headerAction) && (
-        <div className="flex items-start justify-between gap-4 mb-4 pb-3 border-b border-gray-800/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4 pb-3 border-b border-[var(--border-subtle)]">
           <div>
-            {title && <h3 className="text-base font-semibold text-gray-100 tracking-tight">{title}</h3>}
-            {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+            {title && <h3 className="text-base font-semibold text-[var(--text-primary)] tracking-tight">{title}</h3>}
+            {subtitle && <p className="text-xs text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
           </div>
-          {headerAction && <div className="shrink-0">{headerAction}</div>}
+          {headerAction && <div className="shrink-0 self-start sm:self-auto">{headerAction}</div>}
         </div>
       )}
 
       <div>{children}</div>
 
       {footer && (
-        <div className="mt-4 pt-3 border-t border-gray-800/80 text-xs text-gray-400">
+        <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
           {footer}
         </div>
       )}
     </div>
   );
 };
-

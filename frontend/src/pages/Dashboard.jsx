@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { analyticsService } from '../services/analytics';
 import { budgetService } from '../services/budgets';
 import { savingsGoalService } from '../services/savingsGoals';
@@ -11,14 +12,13 @@ import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
-import { CardSkeleton, TableSkeleton } from '../components/common/SkeletonLoader';
+import { CardSkeleton } from '../components/common/SkeletonLoader';
 import { TransactionModal } from '../components/transactions/TransactionModal';
 
 import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  TrendingUp,
   Percent,
   Plus,
   Bell,
@@ -26,9 +26,6 @@ import {
   WalletCards,
   ArrowRight,
   Sparkles,
-  Calendar,
-  AlertCircle,
-  Clock,
 } from 'lucide-react';
 
 import {
@@ -51,6 +48,7 @@ const CATEGORY_COLORS = [
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { isDark } = useTheme();
 
   const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState({
@@ -148,14 +146,13 @@ export const Dashboard = () => {
   };
 
   // Predict next month expense from monthly trend or historical average
-  const predictedNextMonthExpense = React.useMemo(() => {
+  const predictedNextMonthExpense = useMemo(() => {
     if (!monthlyData || monthlyData.length === 0) return 0;
     const expenseValues = monthlyData
       .map((m) => parseFloat(m.expense) || 0)
       .filter((v) => v > 0);
     if (expenseValues.length === 0) return 0;
     const avg = expenseValues.reduce((a, b) => a + b, 0) / expenseValues.length;
-    // slight trend estimation
     const lastExpense = expenseValues[expenseValues.length - 1];
     return Math.round((avg * 0.4 + lastExpense * 0.6) * 100) / 100;
   }, [monthlyData]);
@@ -167,27 +164,37 @@ export const Dashboard = () => {
     Expense: parseFloat(d.expense) || 0,
   }));
 
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#151C2C' : '#FFFFFF',
+    borderColor: isDark ? '#1F293D' : '#E2E8F0',
+    borderRadius: '12px',
+    color: isDark ? '#F9FAFB' : '#0F172A',
+    fontSize: '12px',
+    boxShadow: isDark ? '0 10px 25px -5px rgba(0, 0, 0, 0.5)' : '0 10px 25px -5px rgba(0, 0, 0, 0.08)',
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Welcome Banner & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-800/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[var(--border-subtle)]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Hello, {user?.full_name?.split(' ')[0] || 'User'}!
             </h1>
             <span className="text-xl">👋</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-[var(--text-muted)] mt-1">
             Here is your financial activity overview and health analysis for today.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <Button
             variant="success"
             size="sm"
             icon={Plus}
+            className="flex-1 sm:flex-none"
             onClick={() => openAddModal('income')}
           >
             Add Income
@@ -196,6 +203,7 @@ export const Dashboard = () => {
             variant="primary"
             size="sm"
             icon={Plus}
+            className="flex-1 sm:flex-none"
             onClick={() => openAddModal('expense')}
           >
             Add Expense
@@ -204,7 +212,7 @@ export const Dashboard = () => {
       </div>
 
       {/* 4 Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {isLoading ? (
           <>
             <CardSkeleton />
@@ -218,7 +226,7 @@ export const Dashboard = () => {
               title="Total Balance"
               value={formatCurrency(summary.balance)}
               icon={Wallet}
-              iconColor={summary.balance >= 0 ? 'text-indigo-400' : 'text-rose-400'}
+              iconColor={summary.balance >= 0 ? 'text-indigo-500' : 'text-rose-500'}
               iconBg={summary.balance >= 0 ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-rose-500/10 border-rose-500/20'}
               subtitle="Net liquid financial position"
               trend={summary.balance >= 0 ? 'Positive' : 'Deficit'}
@@ -229,7 +237,7 @@ export const Dashboard = () => {
               title="Total Income"
               value={formatCurrency(summary.total_income)}
               icon={ArrowUpRight}
-              iconColor="text-emerald-400"
+              iconColor="text-emerald-500"
               iconBg="bg-emerald-500/10 border-emerald-500/20"
               subtitle="All recorded earnings"
               trend="Inflow"
@@ -240,7 +248,7 @@ export const Dashboard = () => {
               title="Total Expenses"
               value={formatCurrency(summary.total_expense)}
               icon={ArrowDownRight}
-              iconColor="text-rose-400"
+              iconColor="text-rose-500"
               iconBg="bg-rose-500/10 border-rose-500/20"
               subtitle="All cumulative spending"
               trend="Outflow"
@@ -251,7 +259,7 @@ export const Dashboard = () => {
               title="Savings Rate"
               value={formatPercentage(summary.savings_rate)}
               icon={Percent}
-              iconColor="text-amber-400"
+              iconColor="text-amber-500"
               iconBg="bg-amber-500/10 border-amber-500/20"
               subtitle="Portion of earnings retained"
               trend={summary.savings_rate >= 20 ? 'Target Achieved' : 'Needs Attention'}
@@ -262,14 +270,14 @@ export const Dashboard = () => {
       </div>
 
       {/* Main Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Monthly Income vs Expense Chart */}
         <Card
           className="lg:col-span-2"
           title="Income vs Expenses"
           subtitle={`Year ${new Date().getFullYear()} monthly comparison`}
           headerAction={
-            <Link to="/analytics" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1">
+            <Link to="/analytics" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold flex items-center gap-1">
               Detailed Analytics <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           }
@@ -282,25 +290,18 @@ export const Dashboard = () => {
               onAction={() => openAddModal('expense')}
             />
           ) : (
-            <div className="h-72 w-full pt-4">
+            <div className="h-64 sm:h-72 w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={formattedMonthlyChart} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                  <XAxis dataKey="name" stroke="#6B7280" fontSize={11} tickLine={false} />
+                <BarChart data={formattedMonthlyChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="name" stroke={isDark ? '#6B7280' : '#94A3B8'} fontSize={11} tickLine={false} />
                   <YAxis
-                    stroke="#6B7280"
+                    stroke={isDark ? '#6B7280' : '#94A3B8'}
                     fontSize={11}
                     tickLine={false}
                     tickFormatter={(val) => `৳${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#151C2C',
-                      borderColor: '#1F293D',
-                      borderRadius: '12px',
-                      color: '#F9FAFB',
-                      fontSize: '12px',
-                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-                    }}
+                    contentStyle={tooltipStyle}
                     formatter={(value) => [formatCurrency(value), undefined]}
                   />
                   <Legend
@@ -322,7 +323,7 @@ export const Dashboard = () => {
           title="Expense Distribution"
           subtitle="Top expense categories"
           headerAction={
-            <Link to="/categories" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+            <Link to="/categories" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
               Manage
             </Link>
           }
@@ -334,7 +335,7 @@ export const Dashboard = () => {
             />
           ) : (
             <div className="flex flex-col items-center">
-              <div className="h-52 w-full">
+              <div className="h-48 sm:h-52 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -343,8 +344,8 @@ export const Dashboard = () => {
                       nameKey="category_name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={48}
-                      outerRadius={75}
+                      innerRadius={44}
+                      outerRadius={72}
                       paddingAngle={3}
                     >
                       {categoryData.map((entry, index) => (
@@ -355,13 +356,7 @@ export const Dashboard = () => {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#151C2C',
-                        borderColor: '#1F293D',
-                        borderRadius: '12px',
-                        color: '#F9FAFB',
-                        fontSize: '12px',
-                      }}
+                      contentStyle={tooltipStyle}
                       formatter={(val) => [formatCurrency(val), 'Spent']}
                     />
                   </PieChart>
@@ -377,11 +372,11 @@ export const Dashboard = () => {
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }}
                       />
-                      <span className="text-gray-300 truncate">{cat.category_name}</span>
+                      <span className="text-[var(--text-secondary)] truncate">{cat.category_name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-200">{formatCurrency(cat.total_amount)}</span>
-                      <span className="text-gray-400 text-[11px]">({cat.percentage}%)</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{formatCurrency(cat.total_amount)}</span>
+                      <span className="text-[var(--text-muted)] text-[11px]">({cat.percentage}%)</span>
                     </div>
                   </div>
                 ))}
@@ -392,16 +387,16 @@ export const Dashboard = () => {
       </div>
 
       {/* AI Expense Prediction & Alerts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Machine Learning / AI Prediction Card */}
-        <div className="bg-gradient-to-br from-[#151C2C] to-[#1a1c38] border border-indigo-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-gradient-to-br from-[#151C2C] to-[#1a1c38] border border-indigo-500/25 rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                   AI Expense Prediction
                 </h3>
               </div>
@@ -409,8 +404,8 @@ export const Dashboard = () => {
             </div>
 
             <div>
-              <p className="text-xs text-indigo-200/70">Forecasted Next Month Expenses</p>
-              <h2 className="text-3xl font-extrabold text-white mt-1">
+              <p className="text-xs text-indigo-200/80">Forecasted Next Month Expenses</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
                 {formatCurrency(predictedNextMonthExpense)}
               </h2>
             </div>
@@ -425,7 +420,7 @@ export const Dashboard = () => {
             <span className="text-[11px] text-indigo-300">Updated from transaction logs</span>
             <Link
               to="/expense-prediction"
-              className="text-xs text-white font-semibold flex items-center gap-1.5 hover:text-indigo-300 transition-colors"
+              className="text-xs text-white font-semibold flex items-center gap-1.5 hover:text-indigo-200 transition-colors"
             >
               Explore AI Model <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -438,19 +433,19 @@ export const Dashboard = () => {
           title="Active Spending Alerts"
           subtitle="Automated notifications & budget threshold triggers"
           headerAction={
-            <Link to="/spending-alerts" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+            <Link to="/spending-alerts" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
               View All ({alerts.length})
             </Link>
           }
         >
           {alerts.length === 0 ? (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-300 text-xs">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs">
               <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4 text-emerald-400" />
+                <Sparkles className="w-4 h-4 text-emerald-500" />
               </div>
               <div>
-                <p className="font-semibold text-emerald-200">All spending is currently within safe limits!</p>
-                <p className="text-gray-400 mt-0.5">No budget threshold alerts or risk notices generated.</p>
+                <p className="font-semibold text-emerald-700 dark:text-emerald-200">All spending is currently within safe limits!</p>
+                <p className="text-[var(--text-muted)] mt-0.5">No budget threshold alerts or risk notices generated.</p>
               </div>
             </div>
           ) : (
@@ -460,17 +455,17 @@ export const Dashboard = () => {
                   key={alert.id}
                   className={`flex items-start justify-between gap-3 p-3.5 rounded-xl border text-xs ${
                     alert.severity === 'danger'
-                      ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                      ? 'bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-200'
                       : alert.severity === 'warning'
-                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-200'
-                      : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-200'
+                      ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-200'
+                      : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-200'
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <Bell className="w-4 h-4 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-medium text-gray-100">{alert.message}</p>
-                      <span className="text-[11px] text-gray-400 mt-0.5 block">
+                      <p className="font-semibold text-[var(--text-primary)]">{alert.message}</p>
+                      <span className="text-[11px] text-[var(--text-muted)] mt-0.5 block">
                         {formatDate(alert.created_at)}
                       </span>
                     </div>
@@ -484,14 +479,14 @@ export const Dashboard = () => {
       </div>
 
       {/* Recent Transactions & Budget Progress Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         {/* Recent Transactions */}
         <Card
           className="lg:col-span-2"
           title="Recent Transactions"
           subtitle="Your latest financial actions"
           headerAction={
-            <Link to="/transactions" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1">
+            <Link to="/transactions" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold flex items-center gap-1">
               View All <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           }
@@ -504,66 +499,109 @@ export const Dashboard = () => {
               onAction={() => openAddModal('expense')}
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-gray-800 text-gray-400 uppercase text-[10px] tracking-wider">
-                    <th className="pb-3 font-semibold">Title</th>
-                    <th className="pb-3 font-semibold">Category</th>
-                    <th className="pb-3 font-semibold">Date</th>
-                    <th className="pb-3 font-semibold text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/60">
-                  {recentTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-800/20 transition-colors">
-                      <td className="py-3 pr-2 font-medium text-gray-200 flex items-center gap-2">
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                            tx.type === 'income'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                          }`}
-                        >
-                          {tx.type === 'income' ? (
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                          ) : (
-                            <ArrowDownRight className="w-3.5 h-3.5" />
-                          )}
-                        </div>
-                        <span className="truncate max-w-[160px] sm:max-w-xs">{tx.title}</span>
-                      </td>
-                      <td className="py-3 text-gray-400">
-                        <span className="px-2 py-0.5 rounded-md bg-gray-800/80 text-gray-300 text-[11px]">
-                          {tx.category_name || 'Uncategorized'}
-                        </span>
-                      </td>
-                      <td className="py-3 text-gray-400 text-[11px] whitespace-nowrap">
-                        {formatDate(tx.transaction_date)}
-                      </td>
-                      <td className="py-3 text-right font-bold whitespace-nowrap">
-                        <span
-                          className={tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}
-                        >
-                          {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
-                        </span>
-                      </td>
+            <div>
+              {/* Desktop Table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[var(--border-subtle)] text-[var(--text-muted)] uppercase text-[10px] tracking-wider">
+                      <th className="pb-3 font-semibold">Title</th>
+                      <th className="pb-3 font-semibold">Category</th>
+                      <th className="pb-3 font-semibold">Date</th>
+                      <th className="pb-3 font-semibold text-right">Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border-subtle)]">
+                    {recentTransactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors">
+                        <td className="py-3 pr-2 font-medium text-[var(--text-primary)] flex items-center gap-2">
+                          <div
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                              tx.type === 'income'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                            }`}
+                          >
+                            {tx.type === 'income' ? (
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            ) : (
+                              <ArrowDownRight className="w-3.5 h-3.5" />
+                            )}
+                          </div>
+                          <span className="truncate max-w-[160px] sm:max-w-xs">{tx.title}</span>
+                        </td>
+                        <td className="py-3 text-[var(--text-muted)]">
+                          <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 text-[11px] font-medium">
+                            {tx.category_name || 'Uncategorized'}
+                          </span>
+                        </td>
+                        <td className="py-3 text-[var(--text-muted)] text-[11px] whitespace-nowrap">
+                          {formatDate(tx.transaction_date)}
+                        </td>
+                        <td className="py-3 text-right font-bold whitespace-nowrap">
+                          <span
+                            className={tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}
+                          >
+                            {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card List */}
+              <div className="sm:hidden divide-y divide-[var(--border-subtle)] -mx-2">
+                {recentTransactions.map((tx) => (
+                  <div key={tx.id} className="p-3 flex items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/15 transition-colors">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          tx.type === 'income'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                        }`}
+                      >
+                        {tx.type === 'income' ? (
+                          <ArrowUpRight className="w-4 h-4" />
+                        ) : (
+                          <ArrowDownRight className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-xs text-[var(--text-primary)] truncate">{tx.title}</p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] mt-0.5">
+                          <span>{formatDate(tx.transaction_date)}</span>
+                          <span>•</span>
+                          <span className="truncate">{tx.category_name || 'Uncategorized'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`font-bold text-xs ${
+                          tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                        }`}
+                      >
+                        {tx.type === 'income' ? '+' : '-'} {formatCurrency(tx.amount)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </Card>
 
         {/* Budgets & Savings Goals Overview */}
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           {/* Budget Overview Card */}
           <Card
             title="Budget Progress"
             subtitle="Active category limits"
             headerAction={
-              <Link to="/budgets" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+              <Link to="/budgets" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
                 Manage
               </Link>
             }
@@ -586,14 +624,14 @@ export const Dashboard = () => {
                   return (
                     <div key={b.id} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-gray-200">Budget #{b.id}</span>
-                        <span className="text-gray-400">
+                        <span className="font-semibold text-[var(--text-primary)]">Budget #{b.id}</span>
+                        <span className="text-[var(--text-muted)]">
                           {formatCurrency(b.spent_amount || 0)} / {formatCurrency(b.amount)}
                         </span>
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full transition-all duration-500 rounded-full ${
                             isExceeded
@@ -606,7 +644,7 @@ export const Dashboard = () => {
                         />
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] text-gray-400">
+                      <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
                         <Badge
                           variant={isExceeded ? 'danger' : isWarning ? 'warning' : 'success'}
                           size="sm"
@@ -627,7 +665,7 @@ export const Dashboard = () => {
             title="Savings Goals"
             subtitle="Your financial milestones"
             headerAction={
-              <Link to="/savings-goals" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+              <Link to="/savings-goals" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
                 Manage
               </Link>
             }
@@ -645,18 +683,18 @@ export const Dashboard = () => {
                   return (
                     <div key={g.id} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-gray-200 truncate max-w-[140px]">{g.title}</span>
-                        <span className="text-indigo-400 font-bold">{percent}%</span>
+                        <span className="font-semibold text-[var(--text-primary)] truncate max-w-[140px]">{g.title}</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">{percent}%</span>
                       </div>
 
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-500 rounded-full"
                           style={{ width: `${Math.min(percent, 100)}%` }}
                         />
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] text-gray-400">
+                      <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
                         <span>{formatCurrency(g.current_amount)} saved</span>
                         <span>Target: {formatCurrency(g.target_amount)}</span>
                       </div>
@@ -679,4 +717,3 @@ export const Dashboard = () => {
     </div>
   );
 };
-

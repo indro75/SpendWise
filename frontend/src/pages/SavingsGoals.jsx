@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { savingsGoalService } from '../services/savingsGoals';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
@@ -18,10 +18,6 @@ import {
   Trash2,
   Calendar,
   DollarSign,
-  CheckCircle2,
-  AlertCircle,
-  TrendingUp,
-  Sparkles,
   ArrowUpCircle,
 } from 'lucide-react';
 
@@ -64,8 +60,8 @@ export const SavingsGoals = () => {
       const goalsWithProgress = await Promise.all(
         rawGoals.map(async (g) => {
           try {
-            const prog = await savingsGoalService.getProgress(g.id);
-            return { ...g, ...prog };
+            const progress = await savingsGoalService.getProgress(g.id);
+            return { ...g, ...progress };
           } catch {
             return g;
           }
@@ -83,21 +79,19 @@ export const SavingsGoals = () => {
     loadGoals();
   }, [loadGoals]);
 
-  // Create Goal
-  const handleCreate = async (e) => {
+  // Create Goal Handler
+  const handleCreateGoal = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      showToast('Title is required', 'warning');
+      showToast('Title is required', 'error');
       return;
     }
-    const target = parseFloat(targetAmount);
-    const curr = parseFloat(currentAmount) || 0;
-    if (isNaN(target) || target <= 0) {
-      showToast('Target amount must be greater than 0', 'warning');
+    if (!targetAmount || isNaN(targetAmount) || parseFloat(targetAmount) <= 0) {
+      showToast('Valid positive target amount is required', 'error');
       return;
     }
-    if (curr > target) {
-      showToast('Current savings cannot exceed target amount', 'warning');
+    if (!deadline) {
+      showToast('Target deadline date is required', 'error');
       return;
     }
 
@@ -105,12 +99,12 @@ export const SavingsGoals = () => {
       setIsSubmittingCreate(true);
       await savingsGoalService.create({
         title: title.trim(),
-        target_amount: target,
-        current_amount: curr,
-        deadline: deadline || null,
+        target_amount: parseFloat(targetAmount),
+        current_amount: parseFloat(currentAmount) || 0,
+        deadline,
       });
 
-      showToast('Savings goal created successfully!', 'success');
+      showToast('Savings goal created successfully', 'success');
       setIsCreateOpen(false);
       setTitle('');
       setTargetAmount('');
@@ -119,72 +113,63 @@ export const SavingsGoals = () => {
       loadGoals();
     } catch (err) {
       const detail = err.response?.data?.detail;
-      showToast(typeof detail === 'string' ? detail : 'Failed to create savings goal', 'error');
+      const msg = typeof detail === 'string' ? detail : 'Failed to create goal';
+      showToast(msg, 'error');
     } finally {
       setIsSubmittingCreate(false);
     }
   };
 
-  // Add Funds / Deposit
+  // Deposit Handler
   const handleDeposit = async (e) => {
     e.preventDefault();
-    if (!depositGoal) return;
-    const added = parseFloat(depositAmount);
-    if (isNaN(added) || added <= 0) {
-      showToast('Please enter a valid deposit amount', 'warning');
-      return;
-    }
-
-    const newTotal = (parseFloat(depositGoal.current_amount) || 0) + added;
-    const target = parseFloat(depositGoal.target_amount);
-
-    if (newTotal > target) {
-      showToast(`Total cannot exceed target of ${formatCurrency(target)}`, 'warning');
+    if (!depositAmount || isNaN(depositAmount) || parseFloat(depositAmount) <= 0) {
+      showToast('Please enter a valid deposit amount', 'error');
       return;
     }
 
     try {
       setIsSubmittingDeposit(true);
+      const newTotal = (parseFloat(depositGoal.current_amount) || 0) + parseFloat(depositAmount);
       await savingsGoalService.update(depositGoal.id, {
         current_amount: newTotal,
       });
-      showToast(`Added ${formatCurrency(added)} to "${depositGoal.title}"!`, 'success');
+
+      showToast(`Deposited ${formatCurrency(depositAmount)} to "${depositGoal.title}"!`, 'success');
       setDepositGoal(null);
       setDepositAmount('');
       loadGoals();
     } catch (err) {
       const detail = err.response?.data?.detail;
-      showToast(typeof detail === 'string' ? detail : 'Failed to update savings', 'error');
+      const msg = typeof detail === 'string' ? detail : 'Deposit failed';
+      showToast(msg, 'error');
     } finally {
       setIsSubmittingDeposit(false);
     }
   };
 
-  // Edit Goal
-  const openEdit = (g) => {
+  // Open Edit Modal
+  const openEditModal = (g) => {
     setEditingGoal(g);
     setEditTitle(g.title);
     setEditTarget(g.target_amount.toString());
     setEditCurrent(g.current_amount.toString());
-    setEditDeadline(g.deadline || '');
+    setEditDeadline(g.deadline);
   };
 
-  const handleEdit = async (e) => {
+  // Update Handler
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    if (!editingGoal) return;
-    const target = parseFloat(editTarget);
-    const curr = parseFloat(editCurrent);
-
     if (!editTitle.trim()) {
-      showToast('Title is required', 'warning');
+      showToast('Title is required', 'error');
       return;
     }
-    if (isNaN(target) || target <= 0) {
-      showToast('Target amount must be greater than 0', 'warning');
+    if (!editTarget || isNaN(editTarget) || parseFloat(editTarget) <= 0) {
+      showToast('Valid target amount is required', 'error');
       return;
     }
-    if (curr > target) {
-      showToast('Current savings cannot exceed target amount', 'warning');
+    if (!editDeadline) {
+      showToast('Deadline is required', 'error');
       return;
     }
 
@@ -192,39 +177,40 @@ export const SavingsGoals = () => {
       setIsSubmittingEdit(true);
       await savingsGoalService.update(editingGoal.id, {
         title: editTitle.trim(),
-        target_amount: target,
-        current_amount: curr,
-        deadline: editDeadline || null,
+        target_amount: parseFloat(editTarget),
+        current_amount: parseFloat(editCurrent) || 0,
+        deadline: editDeadline,
       });
 
-      showToast('Savings goal updated successfully!', 'success');
+      showToast('Goal updated successfully', 'success');
       setEditingGoal(null);
       loadGoals();
     } catch (err) {
       const detail = err.response?.data?.detail;
-      showToast(typeof detail === 'string' ? detail : 'Failed to update goal', 'error');
+      const msg = typeof detail === 'string' ? detail : 'Failed to update goal';
+      showToast(msg, 'error');
     } finally {
       setIsSubmittingEdit(false);
     }
   };
 
-  // Delete Goal
+  // Delete Handler
   const handleDelete = async () => {
     if (!deletingGoal) return;
     try {
       setIsDeleting(true);
       await savingsGoalService.delete(deletingGoal.id);
-      showToast('Savings goal deleted', 'success');
+      showToast('Savings goal removed successfully', 'success');
       setDeletingGoal(null);
       loadGoals();
     } catch {
-      showToast('Failed to delete goal', 'error');
+      showToast('Failed to delete savings goal', 'error');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Filtered Goals
+  // Filtered
   const filteredGoals = useMemo(() => {
     if (statusFilter === 'all') return goals;
     return goals.filter((g) => g.status === statusFilter);
@@ -237,15 +223,15 @@ export const SavingsGoals = () => {
   const overallPercentage = totalTarget > 0 ? ((totalSaved / totalTarget) * 100).toFixed(1) : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-800/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[var(--border-subtle)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Target className="w-6 h-6 text-indigo-400" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+            <Target className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500" />
             Savings Goals
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-[var(--text-muted)] mt-1">
             Set target financial milestones, track saved funds, and hit your deadlines.
           </p>
         </div>
@@ -254,6 +240,7 @@ export const SavingsGoals = () => {
           variant="primary"
           size="sm"
           icon={Plus}
+          className="w-full sm:w-auto"
           onClick={() => {
             setTitle('');
             setTargetAmount('');
@@ -267,54 +254,52 @@ export const SavingsGoals = () => {
       </div>
 
       {/* Aggregate Stat Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-[#151C2C] border border-[#1F293D] rounded-xl p-4">
-          <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Saved</span>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">{formatCurrency(totalSaved)}</p>
-          <span className="text-[11px] text-gray-400 mt-1 block">{overallPercentage}% of target achieved</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3.5 sm:p-4 shadow-sm">
+          <span className="text-[10px] sm:text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Total Saved</span>
+          <p className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">{formatCurrency(totalSaved)}</p>
+          <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-1 block truncate">{overallPercentage}% achieved</span>
         </div>
 
-        <div className="bg-[#151C2C] border border-[#1F293D] rounded-xl p-4">
-          <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Target</span>
-          <p className="text-2xl font-bold text-gray-100 mt-1">{formatCurrency(totalTarget)}</p>
-          <span className="text-[11px] text-gray-400 mt-1 block">Combined target across goals</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3.5 sm:p-4 shadow-sm">
+          <span className="text-[10px] sm:text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Total Target</span>
+          <p className="text-lg sm:text-2xl font-bold text-[var(--text-primary)] mt-0.5 truncate">{formatCurrency(totalTarget)}</p>
+          <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-1 block truncate">{goals.length} target goals</span>
         </div>
 
-        <div className="bg-[#151C2C] border border-[#1F293D] rounded-xl p-4">
-          <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Remaining Gap</span>
-          <p className="text-2xl font-bold text-indigo-400 mt-1">{formatCurrency(totalRemaining)}</p>
-          <span className="text-[11px] text-gray-400 mt-1 block">Needed to reach 100% completion</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3.5 sm:p-4 shadow-sm">
+          <span className="text-[10px] sm:text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Remaining Gap</span>
+          <p className="text-lg sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-0.5 truncate">{formatCurrency(totalRemaining)}</p>
+          <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-1 block truncate">To 100% completion</span>
         </div>
 
-        <div className="bg-[#151C2C] border border-[#1F293D] rounded-xl p-4">
-          <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Active Milestones</span>
-          <p className="text-2xl font-bold text-amber-400 mt-1">{goals.length} Goals</p>
-          <span className="text-[11px] text-gray-400 mt-1 block">
-            {goals.filter((g) => g.status === 'Completed').length} reached 100%
-          </span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3.5 sm:p-4 shadow-sm">
+          <span className="text-[10px] sm:text-xs text-[var(--text-muted)] uppercase tracking-wider font-semibold">Completed</span>
+          <p className="text-lg sm:text-2xl font-bold text-amber-500 mt-0.5 truncate">{goals.filter((g) => g.status === 'Completed').length} Goals</p>
+          <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-1 block truncate">Milestones reached</span>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 pb-1 border-b border-gray-800">
+      <div className="flex flex-wrap items-center gap-2 pb-1 border-b border-[var(--border-subtle)]">
         <button
           type="button"
           onClick={() => setStatusFilter('all')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             statusFilter === 'all'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
           }`}
         >
-          All Goals ({goals.length})
+          All ({goals.length})
         </button>
         <button
           type="button"
           onClick={() => setStatusFilter('In Progress')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             statusFilter === 'In Progress'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
           }`}
         >
           In Progress ({goals.filter((g) => g.status === 'In Progress').length})
@@ -322,10 +307,10 @@ export const SavingsGoals = () => {
         <button
           type="button"
           onClick={() => setStatusFilter('Completed')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             statusFilter === 'Completed'
-              ? 'bg-emerald-600 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
           }`}
         >
           Completed ({goals.filter((g) => g.status === 'Completed').length})
@@ -333,10 +318,10 @@ export const SavingsGoals = () => {
         <button
           type="button"
           onClick={() => setStatusFilter('Overdue')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             statusFilter === 'Overdue'
-              ? 'bg-rose-600 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              ? 'bg-rose-600 text-white shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
           }`}
         >
           Overdue ({goals.filter((g) => g.status === 'Overdue').length})
@@ -345,7 +330,7 @@ export const SavingsGoals = () => {
 
       {/* Goals Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           <CardSkeleton />
           <CardSkeleton />
           <CardSkeleton />
@@ -354,55 +339,58 @@ export const SavingsGoals = () => {
         <Card>
           <EmptyState
             icon={Target}
-            title="No savings goals"
-            description="Set a target to motivate and pace your personal savings journey."
+            title="No savings goals found"
+            description="Create your first financial target to stay motivated and track your wealth journey."
             actionText="Create Goal"
             onAction={() => setIsCreateOpen(true)}
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {filteredGoals.map((g) => {
             const percent = g.percentage_completed || 0;
-            const isCompleted = g.status === 'Completed';
+            const isCompleted = g.status === 'Completed' || percent >= 100;
             const isOverdue = g.status === 'Overdue';
 
             return (
               <div
                 key={g.id}
-                className="bg-[#151C2C] border border-[#1F293D] rounded-2xl p-5 shadow-lg flex flex-col justify-between hover:border-gray-700/80 transition-all"
+                className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <h3 className="text-base font-bold text-gray-100 truncate pr-2">{g.title}</h3>
+                    <div className="min-w-0">
+                      <span className="text-[10px] sm:text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider block">
+                        Milestone #{g.id}
+                      </span>
+                      <h3 className="text-base font-bold text-[var(--text-primary)] truncate">{g.title}</h3>
+                    </div>
                     <Badge
-                      variant={
-                        isCompleted ? 'success' : isOverdue ? 'danger' : 'info'
-                      }
+                      variant={isCompleted ? 'success' : isOverdue ? 'danger' : 'info'}
                     >
                       {g.status}
                     </Badge>
                   </div>
 
                   {/* Amounts */}
-                  <div className="flex items-baseline justify-between mt-4">
+                  <div className="flex items-baseline justify-between mt-3">
                     <div>
-                      <span className="text-xs text-gray-400">Current Saved</span>
-                      <p className="text-xl font-extrabold text-emerald-400">
+                      <span className="text-xs text-[var(--text-muted)]">Saved</span>
+                      <p className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)]">
                         {formatCurrency(g.current_amount)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-gray-400">Target</span>
-                      <p className="text-sm font-semibold text-gray-300">
+                      <span className="text-xs text-[var(--text-muted)]">Target</span>
+                      <p className="text-sm font-semibold text-[var(--text-secondary)]">
                         {formatCurrency(g.target_amount)}
                       </p>
                     </div>
                   </div>
 
-                  {/* Progress bar */}
+                  {/* Progress Bar */}
                   <div className="mt-3 space-y-1.5">
-                    <div className="h-2.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-2.5 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-500 rounded-full ${
                           isCompleted
@@ -414,60 +402,48 @@ export const SavingsGoals = () => {
                         style={{ width: `${Math.min(percent, 100)}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span className="font-semibold text-indigo-400">{percent}% reached</span>
+                    <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+                      <span>{percent}% completed</span>
                       <span>{formatCurrency(g.remaining_amount || 0)} left</span>
                     </div>
                   </div>
-
-                  {/* Deadline */}
-                  <div className="mt-4 pt-3 border-t border-gray-800/80 flex items-center justify-between text-[11px] text-gray-400">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                      <span>{g.deadline ? formatDate(g.deadline) : 'No Deadline'}</span>
-                    </div>
-                    {isCompleted && (
-                      <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Achieved!
-                      </span>
-                    )}
-                  </div>
                 </div>
 
-                {/* Actions */}
-                <div className="mt-4 pt-3 border-t border-gray-800/80 flex items-center justify-between">
-                  {!isCompleted ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      icon={ArrowUpCircle}
+                {/* Footer Actions & Deadline */}
+                <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+                  <span className="flex items-center gap-1 text-[11px] truncate">
+                    <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
+                    Target: {formatDate(g.deadline)}
+                  </span>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
                       onClick={() => {
                         setDepositGoal(g);
                         setDepositAmount('');
                       }}
+                      className="px-2 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Add Funds"
                     >
-                      Add Savings
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-emerald-400 font-medium">Goal Complete</span>
-                  )}
-
-                  <div className="flex items-center gap-1">
+                      <ArrowUpCircle className="w-3.5 h-3.5" />
+                      Add $
+                    </button>
                     <button
                       type="button"
-                      onClick={() => openEdit(g)}
-                      className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                      onClick={() => openEditModal(g)}
+                      className="p-1.5 text-[var(--text-muted)] hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors cursor-pointer"
                       title="Edit Goal"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeletingGoal(g)}
-                      className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      className="p-1.5 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                       title="Delete Goal"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -477,20 +453,21 @@ export const SavingsGoals = () => {
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* Create Savings Goal Modal */}
       <Modal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Create Savings Goal"
-        subtitle="Set a goal to work towards"
+        title="Create Savings Target"
+        subtitle="Set a goal amount and deadline for future purchases or emergencies"
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleCreateGoal} className="space-y-4">
           <Input
             label="Goal Title"
-            placeholder="e.g. New Laptop, Emergency Fund"
+            placeholder="e.g. Emergency Fund, New Laptop, Vacation"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            autoFocus
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -498,16 +475,17 @@ export const SavingsGoals = () => {
               label="Target Amount (৳ BDT)"
               type="number"
               step="0.01"
-              placeholder="e.g. 50000"
+              placeholder="50000.00"
               value={targetAmount}
               onChange={(e) => setTargetAmount(e.target.value)}
               icon={DollarSign}
               required
             />
             <Input
-              label="Starting Saved (৳ BDT)"
+              label="Starting Saved Amount (৳ BDT)"
               type="number"
               step="0.01"
+              placeholder="0.00"
               value={currentAmount}
               onChange={(e) => setCurrentAmount(e.target.value)}
               icon={DollarSign}
@@ -515,58 +493,48 @@ export const SavingsGoals = () => {
           </div>
 
           <Input
-            label="Target Deadline (Optional)"
+            label="Target Completion Deadline"
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
             icon={Calendar}
+            required
           />
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
-            <Button variant="secondary" onClick={() => setIsCreateOpen(false)}>
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-[var(--border-subtle)]">
+            <Button
+              variant="secondary"
+              onClick={() => setIsCreateOpen(false)}
+              disabled={isSubmittingCreate}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmittingCreate}>
-              Create Goal
+            <Button type="submit" variant="primary" isLoading={isSubmittingCreate} className="w-full sm:w-auto">
+              Save Goal
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Add Funds / Deposit Modal */}
+      {/* Add Funds Modal */}
       <Modal
         isOpen={!!depositGoal}
         onClose={() => setDepositGoal(null)}
-        title="Add Funds to Goal"
-        subtitle={`Deposit towards "${depositGoal?.title}"`}
+        title="Deposit to Savings Goal"
+        subtitle={`Adding funds towards "${depositGoal?.title}"`}
       >
         <form onSubmit={handleDeposit} className="space-y-4">
-          <div className="p-3 rounded-xl bg-gray-800/40 border border-gray-700/60 text-xs space-y-1">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Current Savings:</span>
-              <span className="font-semibold text-gray-200">
-                {formatCurrency(depositGoal?.current_amount)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Target Goal:</span>
-              <span className="font-semibold text-gray-200">
-                {formatCurrency(depositGoal?.target_amount)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Remaining to Save:</span>
-              <span className="font-semibold text-emerald-400">
-                {formatCurrency(depositGoal?.remaining_amount)}
-              </span>
-            </div>
+          <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-[#111827] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
+            <span className="text-[var(--text-muted)]">Current Balance:</span>
+            <span className="font-bold text-[var(--text-primary)]">{formatCurrency(depositGoal?.current_amount || 0)}</span>
           </div>
 
           <Input
-            label="Contribution Amount (৳ BDT)"
+            label="Deposit Amount (৳ BDT)"
             type="number"
             step="0.01"
-            placeholder="e.g. 5000"
+            placeholder="1000.00"
             value={depositAmount}
             onChange={(e) => setDepositAmount(e.target.value)}
             icon={DollarSign}
@@ -574,30 +542,36 @@ export const SavingsGoals = () => {
             autoFocus
           />
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
-            <Button variant="secondary" onClick={() => setDepositGoal(null)}>
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-[var(--border-subtle)]">
+            <Button
+              variant="secondary"
+              onClick={() => setDepositGoal(null)}
+              disabled={isSubmittingDeposit}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="success" isLoading={isSubmittingDeposit}>
-              Deposit Funds
+            <Button type="submit" variant="success" isLoading={isSubmittingDeposit} className="w-full sm:w-auto">
+              Add Deposit
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Edit Modal */}
+      {/* Edit Savings Goal Modal */}
       <Modal
         isOpen={!!editingGoal}
         onClose={() => setEditingGoal(null)}
         title="Edit Savings Goal"
-        subtitle={`Update "${editingGoal?.title}"`}
+        subtitle={`Modifying Milestone #${editingGoal?.id}`}
       >
-        <form onSubmit={handleEdit} className="space-y-4">
+        <form onSubmit={handleUpdate} className="space-y-4">
           <Input
             label="Goal Title"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             required
+            autoFocus
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -611,7 +585,7 @@ export const SavingsGoals = () => {
               required
             />
             <Input
-              label="Current Saved (৳ BDT)"
+              label="Current Saved Amount (৳ BDT)"
               type="number"
               step="0.01"
               value={editCurrent}
@@ -627,30 +601,35 @@ export const SavingsGoals = () => {
             value={editDeadline}
             onChange={(e) => setEditDeadline(e.target.value)}
             icon={Calendar}
+            required
           />
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
-            <Button variant="secondary" onClick={() => setEditingGoal(null)}>
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-[var(--border-subtle)]">
+            <Button
+              variant="secondary"
+              onClick={() => setEditingGoal(null)}
+              disabled={isSubmittingEdit}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmittingEdit}>
-              Update Goal
+            <Button type="submit" variant="primary" isLoading={isSubmittingEdit} className="w-full sm:w-auto">
+              Save Changes
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={!!deletingGoal}
         onClose={() => setDeletingGoal(null)}
         onConfirm={handleDelete}
         title="Delete Savings Goal"
-        message={`Are you sure you want to delete goal "${deletingGoal?.title}"?`}
-        confirmText="Delete Goal"
+        message={`Are you sure you want to permanently delete "${deletingGoal?.title}" (${formatCurrency(deletingGoal?.target_amount)})?`}
+        confirmText="Yes, Delete"
         isLoading={isDeleting}
       />
     </div>
   );
 };
-

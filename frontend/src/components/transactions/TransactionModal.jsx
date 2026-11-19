@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { categoryService } from '../../services/categories';
 import { transactionService } from '../../services/transactions';
 import { useToast } from '../../context/ToastContext';
-import { ArrowDownRight, ArrowUpRight, Calendar, DollarSign, FileText, Tag } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Calendar, DollarSign } from 'lucide-react';
 
 export const TransactionModal = ({
   isOpen,
@@ -27,6 +27,18 @@ export const TransactionModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const loadCategories = useCallback(async () => {
+    setIsLoadingCategories(true);
+    try {
+      const data = await categoryService.getAll();
+      setCategories(data);
+    } catch {
+      showToast('Failed to load categories', 'error');
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     if (isOpen) {
       setType(initialType);
@@ -37,19 +49,7 @@ export const TransactionModal = ({
       setErrors({});
       loadCategories();
     }
-  }, [isOpen, initialType]);
-
-  const loadCategories = async () => {
-    setIsLoadingCategories(true);
-    try {
-      const data = await categoryService.getAll();
-      setCategories(data);
-    } catch {
-      showToast('Failed to load categories', 'error');
-    } finally {
-      setIsLoadingCategories(false);
-    }
-  };
+  }, [isOpen, initialType, loadCategories]);
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
@@ -99,13 +99,15 @@ export const TransactionModal = ({
         transaction_date: transactionDate,
         description: description.trim() || null,
       });
-
-      showToast(`${type === 'income' ? 'Income' : 'Expense'} recorded successfully!`, 'success');
-      onSuccess?.();
+      showToast(
+        `${type === 'income' ? 'Income' : 'Expense'} recorded successfully!`,
+        'success'
+      );
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       const detail = err.response?.data?.detail;
-      const msg = typeof detail === 'string' ? detail : 'Failed to record transaction.';
+      const msg = typeof detail === 'string' ? detail : 'Failed to save transaction';
       showToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
@@ -121,14 +123,14 @@ export const TransactionModal = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Type Toggle Tabs */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-[#111827] rounded-xl border border-gray-800">
+        <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-[#111827] rounded-xl border border-[var(--border-subtle)]">
           <button
             type="button"
             onClick={() => setType('expense')}
-            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               type === 'expense'
                 ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                : 'text-gray-400 hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
             <ArrowDownRight className="w-4 h-4" />
@@ -137,10 +139,10 @@ export const TransactionModal = ({
           <button
             type="button"
             onClick={() => setType('income')}
-            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               type === 'income'
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                : 'text-gray-400 hover:text-white'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
             <ArrowUpRight className="w-4 h-4" />
@@ -174,7 +176,7 @@ export const TransactionModal = ({
         {/* Category & Date in 2 columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold tracking-wide text-gray-300">
+            <label className="text-xs font-semibold tracking-wide text-[var(--text-secondary)]">
               Category
             </label>
             <div className="relative">
@@ -182,7 +184,7 @@ export const TransactionModal = ({
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 disabled={isLoadingCategories}
-                className="w-full rounded-xl bg-[#111827] text-gray-100 text-sm px-3.5 py-2.5 border border-gray-700/70 hover:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full rounded-xl bg-[var(--bg-input)] text-[var(--text-primary)] text-sm px-3.5 py-2.5 border border-[var(--border-subtle)] hover:border-gray-400 dark:hover:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 {filteredCategories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -209,7 +211,7 @@ export const TransactionModal = ({
 
         {/* Description */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold tracking-wide text-gray-300">
+          <label className="text-xs font-semibold tracking-wide text-[var(--text-secondary)]">
             Description (Optional)
           </label>
           <textarea
@@ -217,19 +219,20 @@ export const TransactionModal = ({
             placeholder="Add notes or details..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-xl bg-[#111827] text-gray-100 placeholder-gray-500 text-sm p-3 border border-gray-700/70 hover:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+            className="w-full rounded-xl bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm p-3 border border-[var(--border-subtle)] hover:border-gray-400 dark:hover:border-gray-600 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
-          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-[var(--border-subtle)]">
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button
             type="submit"
             variant={type === 'income' ? 'success' : 'primary'}
             isLoading={isSubmitting}
+            className="w-full sm:w-auto"
           >
             Save {type === 'income' ? 'Income' : 'Expense'}
           </Button>
@@ -238,4 +241,3 @@ export const TransactionModal = ({
     </Modal>
   );
 };
-
