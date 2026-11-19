@@ -1,3 +1,5 @@
+This is a readme file !
+
 <p align="center">
   <img src="https://img.shields.io/badge/SpendWise-AI%20Finance-6366F1?style=for-the-badge&logo=sparkles&logoColor=white" alt="SpendWise" />
 </p>
@@ -24,23 +26,46 @@
 
 ## 📋 Table of Contents
 
-- [Overview](#-overview)
-- [Screenshots](#-screenshots)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
+- [📋 Table of Contents](#-table-of-contents)
+- [🌟 Overview](#-overview)
+- [🖼️ Screenshots](#️-screenshots)
+- [✨ Features](#-features)
+  - [Core Financial Management](#core-financial-management)
+  - [Analytics \& Visualization](#analytics--visualization)
+  - [AI \& Machine Learning](#ai--machine-learning)
+  - [Alerts \& Notifications](#alerts--notifications)
+  - [Authentication \& Security](#authentication--security)
+  - [User Experience](#user-experience)
+- [🛠️ Tech Stack](#️-tech-stack)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [Machine Learning](#machine-learning)
+- [📁 Project Structure](#-project-structure)
+- [🚀 Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
-  - [Backend Setup](#1-backend-setup)
-  - [Frontend Setup](#2-frontend-setup)
-  - [ML Module Setup](#3-ml-module-setup-optional)
-- [Demo Account](#-demo-account)
-- [API Endpoints](#-api-endpoints)
-- [Design System](#-design-system)
-- [Application Pages](#-application-pages)
-- [Environment Variables](#-environment-variables)
-- [Contributing](#-contributing)
-- [License](#-license)
+  - [1. Backend Setup](#1-backend-setup)
+  - [2. Frontend Setup](#2-frontend-setup)
+  - [3. ML Module Setup (Optional)](#3-ml-module-setup-optional)
+- [🔑 Demo Account](#-demo-account)
+- [📡 API Endpoints](#-api-endpoints)
+  - [Authentication](#authentication)
+  - [Transactions](#transactions)
+  - [Categories](#categories)
+  - [Budgets](#budgets)
+  - [Savings Goals](#savings-goals)
+  - [Analytics](#analytics)
+  - [Spending Alerts](#spending-alerts)
+- [🎨 Design System](#-design-system)
+  - [Color Palette](#color-palette)
+  - [Typography](#typography)
+  - [Component Library](#component-library)
+- [📄 Application Pages](#-application-pages)
+- [⚙️ Environment Variables](#️-environment-variables)
+  - [Backend (`backend/.env`)](#backend-backendenv)
+  - [Frontend (`frontend/.env`)](#frontend-frontendenv)
+- [🤝 Contributing](#-contributing)
+  - [Development Guidelines](#development-guidelines)
+- [📜 License](#-license)
 
 ---
 
